@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Responsive viewport meta tag for mobile, tablet, and desktop -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SONIC | Stream Music, Artists & Playlists</title>
+
+    <!-- Google Fonts: Outfit for display headings & Plus Jakarta Sans for clean UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           1. DESIGN TOKENS & RESET
+           ========================================================================== */
+        :root {
+            --bg-base: #090c14;          /* Deep Obsidian Background */
+            --bg-sidebar: #0d111d;       /* Left Navigation Panel */
+            --bg-surface: #141927;       /* Card Surface */
+            --bg-surface-hover: #1c2336; /* Elevated Hover State */
+            --bg-player: rgba(15, 20, 34, 0.94);
+            --accent-primary: #10b981;   /* Vibrant Emerald Green */
+            --accent-secondary: #8b5cf6; /* Electric Violet */
+            --accent-pink: #ec4899;      /* Rose Highlight */
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --sidebar-width: 240px;
+            --player-height: 88px;
+            --transition: all 0.25s ease;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.5;
+            overflow-x: hidden;
+            padding-bottom: calc(var(--player-height) + 1.5rem);
+        }
+
+        h1, h2, h3, h4, .brand {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.2;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* ==========================================================================
+           2. APP LAYOUT SHELL (Sidebar + Main Area)
+           ========================================================================== */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Pure-CSS Mobile Sidebar Toggle Checkbox */
+        #sidebar-toggle {
+            display: none;
+        }
+
+        /* Left Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: var(--player-height);
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+            padding: 1.5rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            z-index: 900;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            padding: 0 0.5rem;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+        }
+
+        .nav-group-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            color: var(--text-muted);
+            padding: 0 0.75rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .nav-list a {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.7rem 0.85rem;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .nav-list a:hover,
+        .nav-list a.active {
+            background-color: var(--bg-surface-hover);
+            color: #ffffff;
+        }
+
+        .nav-list a.active {
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        /* Main Content Container */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 1.5rem 2.25rem 3rem 2.25rem;
+            max-width: 100%;
+        }
+
+        /* ==========================================================================
+           3. TOP HEADER BAR (Search & User Profile)
+           ========================================================================== */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 800;
+            background: rgba(9, 12, 20, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 0.85rem 0;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            color: #ffffff;
+            padding: 0.55rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 50px;
+            padding: 0.65rem 1.2rem 0.65rem 2.65rem;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: var(--bg-surface-hover);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            pointer-events: none;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            padding: 0.35rem 0.9rem 0.35rem 0.4rem;
+            border-radius: 50px;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        /* ==========================================================================
+           4. FEATURED HERO BANNER
+           ========================================================================== */
+        .hero-banner {
+            position: relative;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(125deg, #1e1b4b 0%, #311042 48%, #064e3b 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 2.5rem;
+            margin-bottom: 2.75rem;
+            display: grid;
+            grid-template-columns: 1.3fr 0.7fr;
+            gap: 2rem;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            padding: 0.35rem 0.85rem;
+            border-radius: 50px;
+            margin-bottom: 1rem;
+        }
+
+        .hero-banner h1 {
+            font-size: clamp(1.85rem, 3.5vw, 2.75rem);
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-banner p {
+            color: #cbd5e1;
+            font-size: 0.98rem;
+            max-width: 520px;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .btn-play {
+            background: var(--accent-primary);
+            color: #042f2e;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-play:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.08);
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-art {
+            justify-self: end;
+            width: 210px;
+            height: 210px;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .hero-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ==========================================================================
+           5. SECTION HEADERS & REUSABLE GRIDS
+           ========================================================================== */
+        .section-block {
+            margin-bottom: 3rem;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-head h2 {
+            font-size: 1.45rem;
+            font-weight: 700;
+        }
+
+        .section-head span {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* ==========================================================================
+           6. RECENTLY PLAYED SONGS (Compact Horizontal Cards)
+           ========================================================================== */
+        .recent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .recent-card {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            padding-right: 0.85rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .recent-card:hover {
+            background: var(--bg-surface-hover);
+            transform: translateY(-2px);
+        }
+
+        .recent-card img {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .recent-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .recent-info h4 {
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .recent-info p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-play-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            color: #042f2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            opacity: 0;
+            transform: scale(0.85);
+            transition: var(--transition);
+        }
+
+        .recent-card:hover .mini-play-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ==========================================================================
+           7. POPULAR TRACKS (Ranked Song List)
+           ========================================================================== */
+        .tracks-container {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+        }
+
+        .track-row {
+            display: grid;
+            grid-template-columns: 36px 48px 1.6fr 1fr 64px;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.65rem 0.85rem;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .track-row:hover {
+            background: var(--bg-surface-hover);
+        }
+
+        .track-rank {
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-align: center;
+            font-size: 0.92rem;
+        }
+
+        .track-row:hover .track-rank {
+            color: var(--accent-primary);
+        }
+
+        .track-cover {
+            width: 46px;
+            height: 46px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+        .track-title-col h4 {
+            font-size: 0.96rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .track-title-col p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .track-album {
+            font-size: 0.86rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-duration {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ==========================================================================
+           8. ARTISTS SECTION (Circular Portraits)
+           ========================================================================== */
+        .artists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+            gap: 1.35rem;
+        }
+
+        .artist-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.35rem 1rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .artist-card:hover {
+            background: var(--bg-surface-hover);
+            transform: translateY(-4px);
+        }
+
+        .artist-avatar-wrap {
+            width: 124px;
+            height: 124px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 1rem auto;
+            border: 3px solid rgba(139, 92, 246, 0.35);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .artist-avatar-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .artist-card:hover .artist-avatar-wrap img {
+            transform: scale(1.07);
+        }
+
+        .artist-card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .artist-card p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ==========================================================================
+           9. ALBUMS & PLAYLISTS GRIDS (Media Cards)
+           ========================================================================== */
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.35rem;
+        }
+
+        .media-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .media-card:hover {
+            background: var(--bg-surface-hover);
+            transform: translateY(-4px);
+        }
+
+        .media-cover-wrap {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin-bottom: 0.9rem;
+            background: #1e293b;
+        }
+
+        .media-cover-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .media-card:hover .media-cover-wrap img {
+            transform: scale(1.05);
+        }
+
+        .floating-play {
+            position: absolute;
+            bottom: 0.75rem;
+            right: 0.75rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            color: #042f2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 800;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: var(--transition);
+        }
+
+        .media-card:hover .floating-play {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .media-card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .media-card p {
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ==========================================================================
+           10. PERSISTENT BOTTOM MUSIC-PLAYER SECTION (Pure CSS Controls)
+           ========================================================================== */
+        .music-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--player-height);
+            background: var(--bg-player);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-subtle);
+            padding: 0 1.75rem;
+            display: grid;
+            grid-template-columns: 1fr 1.4fr 1fr;
+            align-items: center;
+            gap: 1rem;
+            z-index: 1000;
+        }
+
+        /* Left: Now Playing Info */
+        .player-track {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            min-width: 0;
+        }
+
+        .player-track img {
+            width: 54px;
+            height: 54px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .player-meta {
+            min-width: 0;
+        }
+
+        .player-meta h4 {
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-meta p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Pure-CSS Like Toggle */
+        #player-like {
+            display: none;
+        }
+
+        .like-btn {
+            cursor: pointer;
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            user-select: none;
+            padding: 0.25rem;
+        }
+
+        #player-like:checked + .like-btn {
+            color: var(--accent-pink);
+            transform: scale(1.15);
+        }
+
+        /* Center: Playback Controls & Progress Bar */
+        .player-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .player-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1.35rem;
+        }
+
+        .ctrl-icon {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .ctrl-icon:hover {
+            color: #ffffff;
+        }
+
+        /* Pure-CSS Play / Pause Toggle */
+        #player-play {
+            display: none;
+        }
+
+        .play-pause-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #090c14;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .play-pause-btn:hover {
+            transform: scale(1.08);
+            background: var(--accent-primary);
+        }
+
+        .play-pause-btn .icon-pause {
+            display: none;
+        }
+
+        #player-play:checked + .play-pause-btn .icon-play {
+            display: none;
+        }
+
+        #player-play:checked + .play-pause-btn .icon-pause {
+            display: inline;
+        }
+
+        .progress-wrap {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.14);
+            border-radius: 50px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            width: 42%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 50px;
+        }
+
+        /* Right: Equalizer & Volume */
+        .player-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.85rem;
+        }
+
+        .equalizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 16px;
+        }
+
+        .equalizer span {
+            width: 3px;
+            background: var(--accent-primary);
+            border-radius: 2px;
+            height: 6px;
+        }
+
+        .equalizer span:nth-child(1) { height: 12px; }
+        .equalizer span:nth-child(2) { height: 16px; }
+        .equalizer span:nth-child(3) { height: 9px; }
+        .equalizer span:nth-child(4) { height: 14px; }
+
+        .volume-bar {
+            width: 90px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.14);
+            border-radius: 50px;
+            overflow: hidden;
+        }
+
+        .volume-fill {
+            width: 72%;
+            height: 100%;
+            background: #cbd5e1;
+            border-radius: 50px;
+        }
+
+        /* ==========================================================================
+           11. RESPONSIVE MEDIA QUERIES
+           ========================================================================== */
+        @media (max-width: 960px) {
+            .hero-banner {
+                grid-template-columns: 1fr;
+                padding: 1.85rem;
+            }
+
+            .hero-art {
+                display: none;
+            }
+
+            .track-row {
+                grid-template-columns: 30px 44px 1.5fr 54px;
+            }
+
+            .track-album {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            #sidebar-toggle:checked ~ .app-layout .sidebar {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem 1.15rem 2.5rem 1.15rem;
+            }
+
+            .mobile-menu-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .music-player {
+                grid-template-columns: 1fr auto;
+                padding: 0 1rem;
+                height: 78px;
+            }
+
+            .player-right,
+            .progress-wrap,
+            .ctrl-secondary {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Checkbox for Mobile Sidebar Toggle -->
+    <input type="checkbox" id="sidebar-toggle" aria-label="Toggle navigation sidebar">
+
+    <div class="app-layout">
+        <!-- ======================================================================
+             LEFT NAVIGATION SIDEBAR
+             ====================================================================== -->
+        <aside class="sidebar">
+            <a href="#" class="brand">
+                <span class="brand-icon">♫</span>
+                <span>SONIC</span>
+            </a>
+
+            <div>
+                <div class="nav-group-title">Discover</div>
+                <ul class="nav-list">
+                    <li><a href="#featured" class="active"><span>🏠</span> Home</a></li>
+                    <li><a href="#recent"><span>🕒</span> Recently Played</a></li>
+                    <li><a href="#popular"><span>🔥</span> Popular Tracks</a></li>
+                    <li><a href="#artists"><span>🎤</span> Top Artists</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="nav-group-title">Your Library</div>
+                <ul class="nav-list">
+                    <li><a href="#albums"><span>💿</span> Albums</a></li>
+                    <li><a href="#playlists"><span>🎧</span> Playlists</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- ======================================================================
+             MAIN SCROLLABLE CONTENT AREA
+             ====================================================================== -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <label for="sidebar-toggle" class="mobile-menu-btn" title="Open Menu">☰</label>
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="search" placeholder="Search artists, songs, albums, or playlists..." aria-label="Search music">
+                    </div>
+                </div>
+
+                <div class="user-pill">
+                    <div class="user-avatar">AR</div>
+                    <span>Aarav</span>
+                </div>
+            </header>
+
+            <!-- Featured Spotlight Hero -->
+            <section id="featured" class="hero-banner">
+                <div>
+                    <span class="hero-tag">✨ Album of the Week</span>
+                    <h1>Midnight Frequencies</h1>
+                    <p>
+                        Immerse yourself in analog synths, lush ambient textures, and late-night electronic grooves crafted by Nova Pulse.
+                    </p>
+                    <div class="hero-btns">
+                        <label for="player-play" class="btn btn-play">▶ Play Now</label>
+                        <a href="#playlists" class="btn btn-glass">Explore Playlists</a>
+                    </div>
+                </div>
+                <div class="hero-art">
+                    <img
+                        src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=600&q=80"
+                        alt="Midnight Frequencies neon synth album cover"
+                        onerror="this.src='https://placehold.co/500x500/1e1b4b/ffffff?text=Midnight+Frequencies'"
+                    >
+                </div>
+            </section>
+
+            <!-- ==================================================================
+                 1. RECENTLY PLAYED SONGS
+                 ================================================================== -->
+            <section id="recent" class="section-block">
+                <div class="section-head">
+                    <h2>Recently Played</h2>
+                    <span>Jump back in</span>
+                </div>
+
+                <div class="recent-grid">
+                    <label for="player-play" class="recent-card">
+                        <img
+                            src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&q=80"
+                            alt="Neon Horizon cover"
+                            onerror="this.src='https://placehold.co/200x200/141927/10b981?text=Track+1'"
+                        >
+                        <div class="recent-info">
+                            <h4>Neon Horizon</h4>
+                            <p>Nova Pulse</p>
+                        </div>
+                        <span class="mini-play-badge">▶</span>
+                    </label>
+
+                    <label for="player-play" class="recent-card">
+                        <img
+                            src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=300&q=80"
+                            alt="Velvet Rain cover"
+                            onerror="this.src='https://placehold.co/200x200/141927/8b5cf6?text=Track+2'"
+                        >
+                        <div class="recent-info">
+                            <h4>Velvet Rain</h4>
+                            <p>Elena Vance</p>
+                        </div>
+                        <span class="mini-play-badge">▶</span>
+                    </label>
+
+                    <label for="player-play" class="recent-card">
+                        <img
+                            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=300&q=80"
+                            alt="Golden Hour Echoes cover"
+                            onerror="this.src='https://placehold.co/200x200/141927/ec4899?text=Track+3'"
+                        >
+                        <div class="recent-info">
+                            <h4>Golden Hour Echoes</h4>
+                            <p>The Meridian Collective</p>
+                        </div>
+                        <span class="mini-play-badge">▶</span>
+                    </label>
+
+                    <label for="player-play" class="recent-card">
+                        <img
+                            src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&q=80"
+                            alt="Starlight Drift cover"
+                            onerror="this.src='https://placehold.co/200x200/141927/10b981?text=Track+4'"
+                        >
+                        <div class="recent-info">
+                            <h4>Starlight Drift</h4>
+                            <p>Kairo & Sora</p>
+                        </div>
+                        <span class="mini-play-badge">▶</span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- ==================================================================
+                 2. POPULAR TRACKS
+                 ================================================================== -->
+            <section id="popular" class="section-block">
+                <div class="section-head">
+                    <h2>Popular Tracks</h2>
+                    <span>Top global charts</span>
+                </div>
+
+                <div class="tracks-container">
+                    <!-- Track 1 -->
+                    <label for="player-play" class="track-row">
+                        <span class="track-rank">1</span>
+                        <img
+                            class="track-cover"
+                            src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=200&q=80"
+                            alt="Electric Bloom"
+                            onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=1'"
+                        >
+                        <div class="track-title-col">
+                            <h4>Electric Bloom</h4>
+                            <p>Nova Pulse</p>
+                        </div>
+                        <span class="track-album">Midnight Frequencies</span>
+                        <span class="track-duration">3:42</span>
+                    </label>
+
+                    <!-- Track 2 -->
+                    <label for="player-play" class="track-row">
+                        <span class="track-rank">2</span>
+                        <img
+                            class="track-cover"
+                            src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=200&q=80"
+                            alt="Chasing Satellites"
+                            onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=2'"
+                        >
+                        <div class="track-title-col">
+                            <h4>Chasing Satellites</h4>
+                            <p>Elena Vance</p>
+                        </div>
+                        <span class="track-album">Glass Skyline</span>
+                        <span class="track-duration">4:05</span>
+                    </label>
+
+                    <!-- Track 3 -->
+                    <label for="player-play" class="track-row">
+                        <span class="track-rank">3</span>
+                        <img
+                            class="track-cover"
+                            src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=200&q=80"
+                            alt="Mirage in Motion"
+                            onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=3'"
+                        >
+                        <div class="track-title-col">
+                            <h4>Mirage in Motion</h4>
+                            <p>Zayn & The Wanderers</p>
+                        </div>
+                        <span class="track-album">Desert Tapes</span>
+                        <span class="track-duration">3:18</span>
+                    </label>
+
+                    <!-- Track 4 -->
+                    <label for="player-play" class="track-row">
+                        <span class="track-rank">4</span>
+                        <img
+                            class="track-cover"
+                            src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=200&q=80"
+                            alt="Oceanic Reverie"
+                            onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=4'"
+                        >
+                        <div class="track-title-col">
+                            <h4>Oceanic Reverie</h4>
+                            <p>Sora Takahashi</p>
+                        </div>
+                        <span class="track-album">Tidal Reflections</span>
+                        <span class="track-duration">4:29</span>
+                    </label>
+
+                    <!-- Track 5 -->
+                    <label for="player-play" class="track-row">
+                        <span class="track-rank">5</span>
+                        <img
+                            class="track-cover"
+                            src="https://images.unsplash.com/photo-1487180144351-b8472da7d491?auto=format&fit=crop&w=200&q=80"
+                            alt="Afterglow Boulevard"
+                            onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=5'"
+                        >
+                        <div class="track-title-col">
+                            <h4>Afterglow Boulevard</h4>
+                            <p>The Meridian Collective</p>
+                        </div>
+                        <span class="track-album">City Lights Vol. 2</span>
+                        <span class="track-duration">3:54</span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- ==================================================================
+                 3. FEATURED ARTISTS
+                 ================================================================== -->
+            <section id="artists" class="section-block">
+                <div class="section-head">
+                    <h2>Popular Artists</h2>
+                    <span>Verified creators</span>
+                </div>
+
+                <div class="artists-grid">
+                    <article class="artist-card">
+                        <div class="artist-avatar-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
+                                alt="Elena Vance"
+                                onerror="this.src='https://placehold.co/300x300/311042/ffffff?text=Elena+Vance'"
+                            >
+                        </div>
+                        <h4>Elena Vance</h4>
+                        <p>4.8M Monthly Listeners</p>
+                    </article>
+
+                    <article class="artist-card">
+                        <div class="artist-avatar-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80"
+                                alt="Nova Pulse"
+                                onerror="this.src='https://placehold.co/300x300/064e3b/ffffff?text=Nova+Pulse'"
+                            >
+                        </div>
+                        <h4>Nova Pulse</h4>
+                        <p>6.2M Monthly Listeners</p>
+                    </article>
+
+                    <article class="artist-card">
+                        <div class="artist-avatar-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80"
+                                alt="Sora Takahashi"
+                                onerror="this.src='https://placehold.co/300x300/1e1b4b/ffffff?text=Sora'"
+                            >
+                        </div>
+                        <h4>Sora Takahashi</h4>
+                        <p>3.1M Monthly Listeners</p>
+                    </article>
+
+                    <article class="artist-card">
+                        <div class="artist-avatar-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80"
+                                alt="Kairo Beats"
+                                onerror="this.src='https://placehold.co/300x300/3f1d38/ffffff?text=Kairo'"
+                            >
+                        </div>
+                        <h4>Kairo Beats</h4>
+                        <p>5.4M Monthly Listeners</p>
+                    </article>
+
+                    <article class="artist-card">
+                        <div class="artist-avatar-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80"
+                                alt="Maya Lin"
+                                onerror="this.src='https://placehold.co/300x300/1e293b/ffffff?text=Maya+Lin'"
+                            >
+                        </div>
+                        <h4>Maya Lin</h4>
+                        <p>2.9M Monthly Listeners</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ==================================================================
+                 4. FEATURED ALBUMS
+                 ================================================================== -->
+            <section id="albums" class="section-block">
+                <div class="section-head">
+                    <h2>Top Albums</h2>
+                    <span>New releases & classics</span>
+                </div>
+
+                <div class="media-grid">
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=500&q=80"
+                                alt="Midnight Frequencies Album"
+                                onerror="this.src='https://placehold.co/400x400/1e1b4b/ffffff?text=Midnight+Frequencies'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>Midnight Frequencies</h4>
+                        <p>2026 • Nova Pulse</p>
+                    </article>
+
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=500&q=80"
+                                alt="Glass Skyline Album"
+                                onerror="this.src='https://placehold.co/400x400/311042/ffffff?text=Glass+Skyline'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>Glass Skyline</h4>
+                        <p>2025 • Elena Vance</p>
+                    </article>
+
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=500&q=80"
+                                alt="Tidal Reflections Album"
+                                onerror="this.src='https://placehold.co/400x400/064e3b/ffffff?text=Tidal+Reflections'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>Tidal Reflections</h4>
+                        <p>2026 • Sora Takahashi</p>
+                    </article>
+
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1487180144351-b8472da7d491?auto=format&fit=crop&w=500&q=80"
+                                alt="City Lights Vol. 2 Album"
+                                onerror="this.src='https://placehold.co/400x400/1e293b/ffffff?text=City+Lights'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>City Lights Vol. 2</h4>
+                        <p>2025 • The Meridian Collective</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ==================================================================
+                 5. CURATED PLAYLISTS
+                 ================================================================== -->
+            <section id="playlists" class="section-block">
+                <div class="section-head">
+                    <h2>Curated Playlists</h2>
+                    <span>Moods & soundtracks</span>
+                </div>
+
+                <div class="media-grid">
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=500&q=80"
+                                alt="Late Night Lo-Fi Playlist"
+                                onerror="this.src='https://placehold.co/400x400/0f172a/10b981?text=Late+Night+Lo-Fi'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>Late Night Lo-Fi</h4>
+                        <p>Chill beats for deep focus, coding sessions, and quiet midnight hours • 45 Tracks</p>
+                    </article>
+
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=500&q=80"
+                                alt="Synthwave Drive Playlist"
+                                onerror="this.src='https://placehold.co/400x400/311042/ec4899?text=Synthwave+Drive'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>Synthwave Drive</h4>
+                        <p>Retro-futuristic basslines and glowing neon melodies for highway nights • 38 Tracks</p>
+                    </article>
+
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=500&q=80"
+                                alt="Acoustic Mornings Playlist"
+                                onerror="this.src='https://placehold.co/400x400/064e3b/ffffff?text=Acoustic+Mornings'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>Acoustic Mornings</h4>
+                        <p>Warm indie folk, stripped-back vocals, and coffeehouse instrumentals • 52 Tracks</p>
+                    </article>
+
+                    <article class="media-card">
+                        <div class="media-cover-wrap">
+                            <img
+                                src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=500&q=80"
+                                alt="High Voltage Workout Playlist"
+                                onerror="this.src='https://placehold.co/400x400/1e1b4b/8b5cf6?text=High+Voltage'"
+                            >
+                            <label for="player-play" class="floating-play">▶</label>
+                        </div>
+                        <h4>High Voltage</h4>
+                        <p>Adrenaline-pumping electronic anthems and heavy percussion drops • 60 Tracks</p>
+                    </article>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ==========================================================================
+         6. PERSISTENT BOTTOM MUSIC-PLAYER SECTION
+         ========================================================================== -->
+    <footer class="music-player" aria-label="Music Player">
+        <!-- Left: Active Song Details & Pure-CSS Heart Toggle -->
+        <div class="player-track">
+            <img
+                src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=200&q=80"
+                alt="Now playing cover art"
+                onerror="this.src='https://placehold.co/120x120/1e1b4b/ffffff?text=Now+Playing'"
+            >
+            <div class="player-meta">
+                <h4>Electric Bloom</h4>
+                <p>Nova Pulse</p>
+            </div>
+
+            <input type="checkbox" id="player-like" aria-label="Like current song">
+            <label for="player-like" class="like-btn" title="Save to Favorites">♥</label>
+        </div>
+
+        <!-- Center: Playback Buttons & Timeline Scrubber -->
+        <div class="player-center">
+            <div class="player-buttons">
+                <span class="ctrl-icon ctrl-secondary" title="Shuffle">🔀</span>
+                <span class="ctrl-icon" title="Previous Track">⏮</span>
+
+                <!-- Pure-CSS Play / Pause State Switch -->
+                <input type="checkbox" id="player-play" aria-label="Play or Pause">
+                <label for="player-play" class="play-pause-btn" title="Play / Pause">
+                    <span class="icon-play">▶</span>
+                    <span class="icon-pause">❚❚</span>
+                </label>
+
+                <span class="ctrl-icon" title="Next Track">⏭</span>
+                <span class="ctrl-icon ctrl-secondary" title="Repeat">🔁</span>
+            </div>
+
+            <div class="progress-wrap">
+                <span>1:34</span>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <span>3:42</span>
+            </div>
+        </div>
+
+        <!-- Right: Equalizer Bars & Volume Indicator -->
+        <div class="player-right">
+            <div class="equalizer" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span class="ctrl-icon" title="Volume">🔊</span>
+            <div class="volume-bar">
+                <div class="volume-fill"></div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
